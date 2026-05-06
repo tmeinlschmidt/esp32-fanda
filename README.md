@@ -92,7 +92,21 @@ Note: Windows doesn't ship with GNU Make, so the project's `Makefile` won't run 
 
 ## Build & flash
 
-The commands below work in every ESP-IDF environment (macOS / Linux shell with `export.sh` sourced, or the Windows ESP-IDF PowerShell). On macOS / Linux the `make` targets are convenient; on Windows without GNU Make installed, run the equivalent `idf.py ...` form shown after each `# or, equivalently:` line.
+These steps work in any ESP-IDF environment (macOS / Linux shell with `export.sh` sourced, or the Windows ESP-IDF PowerShell). The `Makefile` is just a thin wrapper around `idf.py`; if you don't have GNU Make installed (Windows ships without it), use the `idf.py` form instead.
+
+| Make target            | `idf.py` equivalent              |
+|------------------------|----------------------------------|
+| `make set-target`      | `idf.py set-target esp32c3`      |
+| `make build`           | `idf.py build`                   |
+| `make flash`           | `idf.py -p COM3 flash`           |
+| `make monitor`         | `idf.py -p COM3 monitor`         |
+| `make fm`              | `idf.py -p COM3 flash monitor`   |
+| `make clean`           | `idf.py clean`                   |
+| `make fullclean`       | `idf.py fullclean`               |
+| `make erase`           | `idf.py -p COM3 erase-flash`     |
+| `make menuconfig`      | `idf.py menuconfig`              |
+
+Replace `COM3` with your board's port — see "Find the port" below. On macOS / Linux it'll look like `/dev/cu.usbmodem1101` or `/dev/ttyACM0`. `idf.py` will also auto-detect the port if `-p` is omitted; the flag is only needed when auto-detection fails or there are multiple boards plugged in.
 
 One-time, set the chip target:
 
