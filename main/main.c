@@ -48,6 +48,15 @@ static void input_task(void *arg) {
         int button = gpio_get_level(PIN_BUTTON);
         int reed   = gpio_get_level(PIN_REED);
 
+        // Diagnostic: log every level change pre-debounce so we can see
+        // whether the GPIO is moving at all. Remove once everything works.
+        if (button != prev_button) {
+            ESP_LOGI(TAG, "button level %d -> %d", prev_button, button);
+        }
+        if (reed != prev_reed) {
+            ESP_LOGI(TAG, "reed level %d -> %d", prev_reed, reed);
+        }
+
         // Button: falling edge = press (pull-up -> GND).
         if (prev_button == 1 && button == 0 &&
             (now - last_button_edge) >= pdMS_TO_TICKS(DEBOUNCE_MS)) {
@@ -92,6 +101,11 @@ void app_main(void) {
     ESP_ERROR_CHECK(gpio_config(&in_cfg));
 
     audio_init();
+
+    ESP_LOGI(TAG, "pins: LED=%d BUTTON=%d REED=%d (GPIO numbers)",
+             PIN_LED, PIN_BUTTON, PIN_REED);
+    ESP_LOGI(TAG, "initial levels: button=%d reed=%d (1 = idle/pulled-up, 0 = pulled to GND)",
+             gpio_get_level(PIN_BUTTON), gpio_get_level(PIN_REED));
 
     // 4 KB stack is enough; sinf() and i2s_channel_write don't recurse deeply.
     xTaskCreate(input_task, "input", 4096, NULL, 5, NULL);
