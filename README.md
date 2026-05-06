@@ -9,12 +9,14 @@ A small ESP-IDF application for an ESP32-C3 SuperMini that drives an LED, reads 
 
 ## Hardware
 
+Board: **Seeed Studio XIAO ESP32-C3**. The silkscreen `Dn` labels do NOT equal GPIO numbers; the table below shows the actual mapping. D6 (GPIO21) and D7 (GPIO20) are UART0 TX/RX by default — `sdkconfig.defaults` routes the console to USB-Serial-JTAG so these pads can be used for the LED and I2S DIN.
+
 | Silkscreen | GPIO    | Wired to                                                            |
 |-----------:|--------:|---------------------------------------------------------------------|
-| D6         | GPIO6   | LED anode (via 220-330 Ohm resistor to GND on cathode)              |
+| D6         | GPIO21  | LED anode (via 220-330 Ohm resistor to GND on cathode)              |
 | D10        | GPIO10  | Push button, other leg to GND (firmware enables internal pull-up)   |
-| D1         | GPIO1   | Reed switch, other leg to GND (firmware enables internal pull-up)   |
-| D7         | GPIO7   | I2S DIN  -> MAX98357A DIN                                           |
+| D1         | GPIO3   | Reed switch, other leg to GND (firmware enables internal pull-up)   |
+| D7         | GPIO20  | I2S DIN  -> MAX98357A DIN                                           |
 | D8         | GPIO8   | I2S BCLK -> MAX98357A BCLK                                          |
 | D9         | GPIO9   | I2S LRC  -> MAX98357A LRC                                           |
 

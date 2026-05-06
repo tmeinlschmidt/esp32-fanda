@@ -86,15 +86,21 @@ static void input_task(void *arg) {
 }
 
 void app_main(void) {
-    gpio_config_t out_cfg = {
-        .pin_bit_mask = 1ULL << PIN_LED,
-        .mode         = GPIO_MODE_OUTPUT,
-        .pull_up_en   = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type    = GPIO_INTR_DISABLE,
-    };
-    ESP_ERROR_CHECK(gpio_config(&out_cfg));
+    // LED output. Mirror Arduino's pinMode(OUTPUT): reset_pin first (detaches
+    // any latched peripheral / sleep-gpio config), then INPUT_OUTPUT so we can
+    // read the pin back as a diagnostic.
+    gpio_reset_pin(PIN_LED);
+    ESP_ERROR_CHECK(gpio_set_direction(PIN_LED, GPIO_MODE_INPUT_OUTPUT));
     gpio_set_level(PIN_LED, LED_OFF);
+    ESP_LOGI(TAG, "LED after gpio_set_level(LED_OFF=%d): readback=%d",
+             LED_OFF, gpio_get_level(PIN_LED));
+    gpio_set_level(PIN_LED, LED_ON);
+    ESP_LOGI(TAG, "LED after gpio_set_level(LED_ON=%d): readback=%d",
+             LED_ON, gpio_get_level(PIN_LED));
+    vTaskDelay(pdMS_TO_TICKS(500));
+    gpio_set_level(PIN_LED, LED_OFF);
+    ESP_LOGI(TAG, "LED after gpio_set_level(LED_OFF=%d): readback=%d",
+             LED_OFF, gpio_get_level(PIN_LED));
 
     gpio_config_t in_cfg = {
         .pin_bit_mask = (1ULL << PIN_BUTTON) | (1ULL << PIN_REED),

@@ -2,3 +2,7 @@
 CONFIG_IDF_TARGET="esp32c3"
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# Route the console to the C3's built-in USB-Serial-JTAG so we can reuse the
+# default UART pins (GPIO20/GPIO21 = D7/D6 on XIAO ESP32-C3) for application I/O.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
