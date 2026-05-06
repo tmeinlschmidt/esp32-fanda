@@ -47,8 +47,11 @@ fanda/
 
 ## Prerequisites
 
-Install ESP-IDF v5.x. Follow the official guide for macOS or Linux:
-<https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/get-started/index.html>
+Install ESP-IDF v5.x. Pick the section for your OS.
+
+### macOS / Linux
+
+Official guide: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/get-started/linux-macos-setup.html>
 
 Quick steps:
 
@@ -71,7 +74,25 @@ Verify:
 idf.py --version
 ```
 
+### Windows
+
+Use the official ESP-IDF Tools Installer — it bundles Git, Python, the RISC-V toolchain, and creates pre-configured shell shortcuts.
+
+1. Download the **Universal Online Installer** from <https://dl.espressif.com/dl/esp-idf/> (v5.3 or newer).
+2. Run it. Select **ESP-IDF v5.3** (or newer) and target **ESP32-C3**. The default install path (e.g. `C:\Espressif\frameworks\esp-idf-v5.3`) is fine.
+3. Open **"ESP-IDF 5.x PowerShell"** (or **"ESP-IDF 5.x CMD"**) from the Start menu — it has `idf.py` and the toolchain on `PATH` automatically. Use this shell for every build/flash session.
+
+Verify in the ESP-IDF shell:
+
+```powershell
+idf.py --version
+```
+
+Note: Windows doesn't ship with GNU Make, so the project's `Makefile` won't run as-is. Either invoke `idf.py` directly (see Build & flash below) or install GNU Make via Scoop (`scoop install make`), Chocolatey (`choco install make`), or MSYS2.
+
 ## Build & flash
+
+The commands below work in every ESP-IDF environment (macOS / Linux shell with `export.sh` sourced, or the Windows ESP-IDF PowerShell). On macOS / Linux the `make` targets are convenient; on Windows without GNU Make installed, run the equivalent `idf.py ...` form shown after each `# or, equivalently:` line.
 
 One-time, set the chip target:
 
@@ -97,6 +118,13 @@ make flash PORT=/dev/cu.usbmodem1101
 make flash PORT=/dev/ttyACM0
 ```
 
+```powershell
+# Windows (in the ESP-IDF PowerShell):
+idf.py -p COM3 flash
+# or, with GNU Make installed:
+make flash PORT=COM3
+```
+
 Find the port:
 
 ```sh
@@ -104,6 +132,12 @@ Find the port:
 ls /dev/cu.*
 # Linux
 ls /dev/ttyACM* /dev/ttyUSB*
+```
+
+```powershell
+# Windows
+Get-PnpDevice -Class Ports -PresentOnly | Format-Table -AutoSize
+# or open Device Manager -> Ports (COM & LPT)
 ```
 
 Watch the serial logs (exit with Ctrl-]):
@@ -129,11 +163,15 @@ Other useful targets:
 
 ## Troubleshooting
 
-- **Serial port not found:** macOS may need CP210x or CH9102 USB-UART drivers depending on the board's USB-serial chip. Compare `ls /dev/cu.*` before and after plugging the board in to identify the device.
+- **Serial port not found:**
+  - macOS / Linux: install the CP210x or CH9102 USB-UART driver matching the board's USB-serial chip, then compare `ls /dev/cu.*` (macOS) or `ls /dev/ttyACM* /dev/ttyUSB*` (Linux) before and after plugging the board in.
+  - Windows: open Device Manager and look under "Ports (COM & LPT)". If the device shows up under "Other devices" with a yellow warning, install the matching driver (Silicon Labs CP210x, or WCH CH9102 / CH340).
 - **Permission denied on Linux:** add your user to the `dialout` group, then log out and back in:
   ```sh
   sudo usermod -aG dialout $USER
   ```
+- **`make: command not found` on Windows:** GNU Make isn't installed by default. Either run `idf.py` directly (e.g. `idf.py build`, `idf.py -p COM3 flash`) or install Make via `scoop install make`, `choco install make`, or MSYS2.
+- **`idf.py` not found on Windows:** you opened a regular shell. Launch the **"ESP-IDF 5.x PowerShell"** (or CMD) shortcut from the Start menu so `idf.py` and the toolchain are on `PATH`.
 - **Board doesn't boot after flashing:** GPIO8 and GPIO9 are ESP32-C3 strapping pins. Briefly unplug the I2S amp during reset, or move the I2S signals to non-strapping GPIOs and update `main/pins.h`.
 - **No sound:** make sure the MAX98357A SD pin is not pulled to GND (that mutes the amp), and that GAIN is floating or tied to a sensible level.
 - **Button does nothing:** verify wiring (one leg to GPIO10, the other to GND). The internal pull-up is enabled in firmware, so a multimeter on the GPIO should read ~3.3 V with the button open and 0 V when pressed.
