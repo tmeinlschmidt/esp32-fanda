@@ -71,12 +71,12 @@ static void input_task(void *arg) {
             led_double_blink();
         }
 
-        // Reed: rising edge = magnet removed (closed->open).
+        // Reed: rising edge = magnet removed (closed->open). Detected and
+        // logged for visibility, but no action is performed.
         if (prev_reed == 0 && reed == 1 &&
             (now - last_reed_edge) >= pdMS_TO_TICKS(DEBOUNCE_MS)) {
             last_reed_edge = now;
-            ESP_LOGI(TAG, "reed opened");
-            audio_play_reed_tone();
+            ESP_LOGI(TAG, "reed opened (no action)");
         }
 
         prev_button = button;

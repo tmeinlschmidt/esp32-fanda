@@ -28,8 +28,8 @@ static const char *TAG = "audio";
 #define DMA_FRAME_NUM       256
 #define AMPLITUDE           0.5f
 
-#define BUTTON_FREQ_HZ      1000.0f
-#define BUTTON_DURATION_MS  150
+#define REED_FREQ_HZ        500.0f
+#define REED_DURATION_MS    400
 
 // Symbols injected by EMBED_FILES "../low_sonic.wav" in main/CMakeLists.txt.
 extern const uint8_t _binary_low_sonic_wav_start[];
@@ -172,12 +172,7 @@ static void play_pcm16_mono(const uint8_t *bytes, size_t byte_len) {
 }
 
 void audio_play_button_tone(void) {
-    ESP_LOGI(TAG, "button tone");
-    play_tone(BUTTON_FREQ_HZ, BUTTON_DURATION_MS);
-}
-
-void audio_play_reed_tone(void) {
-    ESP_LOGI(TAG, "reed wav");
+    ESP_LOGI(TAG, "button wav");
     size_t data_len = 0;
     const uint8_t *pcm = wav_find_data(
         _binary_low_sonic_wav_start,
@@ -188,4 +183,9 @@ void audio_play_reed_tone(void) {
         return;
     }
     play_pcm16_mono(pcm, data_len);
+}
+
+void audio_play_reed_tone(void) {
+    ESP_LOGI(TAG, "reed tone");
+    play_tone(REED_FREQ_HZ, REED_DURATION_MS);
 }
