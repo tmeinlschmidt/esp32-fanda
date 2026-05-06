@@ -31,6 +31,10 @@ static const char *TAG = "audio";
 #define REED_FREQ_HZ        500.0f
 #define REED_DURATION_MS    400
 
+// Post-gain applied to each WAV sample, with saturation (no wrap-around). The
+// source recording is quiet; 2x lifts it without obvious clipping. Tunable.
+#define WAV_GAIN            2
+
 // Symbols injected by EMBED_FILES "../low_sonic.wav" in main/CMakeLists.txt.
 extern const uint8_t _binary_low_sonic_wav_start[];
 extern const uint8_t _binary_low_sonic_wav_end[];
@@ -63,9 +67,28 @@ void audio_init(void) {
         },
     };
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(s_tx_chan, &std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_enable(s_tx_chan));
+    // Channel stays in INIT until the first playback. Leaving it permanently
+    // enabled would keep BCLK/LRC running, the DMA looping on stale samples,
+    // and the amp audibly idle. session_begin/end bracket each playback.
     ESP_LOGI(TAG, "i2s ready: %d Hz, 16-bit stereo, BCLK=%d LRC=%d DIN=%d",
              SAMPLE_RATE_HZ, PIN_I2S_BCLK, PIN_I2S_LRC, PIN_I2S_DIN);
+}
+
+// Bracket a single playback. session_end pushes enough zeros into the DMA
+// pipeline to overwrite any unsent tail, then disables the channel — so
+// after every play_* the I2S clocks stop and the amp goes silent.
+static void session_begin(void) {
+    ESP_ERROR_CHECK(i2s_channel_enable(s_tx_chan));
+}
+
+static void session_end(void) {
+    int16_t silence[CHUNK_FRAMES * 2] = {0};
+    size_t written = 0;
+    for (int i = 0; i < DMA_DESC_NUM; ++i) {
+        i2s_channel_write(s_tx_chan, silence, sizeof(silence),
+                          &written, portMAX_DELAY);
+    }
+    ESP_ERROR_CHECK(i2s_channel_disable(s_tx_chan));
 }
 
 // Synthesise `duration_ms` of a sine at `freq_hz` and stream it out.
@@ -76,6 +99,7 @@ static void play_tone(float freq_hz, uint32_t duration_ms) {
         ESP_LOGI(TAG, "busy, dropping tone %.0f Hz", freq_hz);
         return;
     }
+    session_begin();
 
     const uint32_t total_frames = (SAMPLE_RATE_HZ * duration_ms) / 1000;
     const float phase_step = 2.0f * (float)M_PI * freq_hz / (float)SAMPLE_RATE_HZ;
@@ -104,6 +128,7 @@ static void play_tone(float freq_hz, uint32_t duration_ms) {
         frames_left -= n;
     }
 
+    session_end();
     xSemaphoreGive(s_busy_mutex);
 }
 
@@ -142,6 +167,7 @@ static void play_pcm16_mono(const uint8_t *bytes, size_t byte_len) {
         ESP_LOGI(TAG, "busy, dropping wav");
         return;
     }
+    session_begin();
 
     int16_t buf[CHUNK_FRAMES * 2];
     const size_t total_frames = byte_len / 2;
@@ -154,8 +180,12 @@ static void play_pcm16_mono(const uint8_t *bytes, size_t byte_len) {
             // Byte-wise read avoids unaligned int16 access on RISC-V.
             const uint8_t *p = bytes + (pos + i) * 2;
             int16_t s = (int16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
-            buf[2 * i + 0] = s;
-            buf[2 * i + 1] = s;
+            int32_t amp = (int32_t)s * WAV_GAIN;
+            if (amp > INT16_MAX)      amp = INT16_MAX;
+            else if (amp < INT16_MIN) amp = INT16_MIN;
+            int16_t out = (int16_t)amp;
+            buf[2 * i + 0] = out;
+            buf[2 * i + 1] = out;
         }
         size_t written = 0;
         esp_err_t err = i2s_channel_write(s_tx_chan, buf,
@@ -168,6 +198,7 @@ static void play_pcm16_mono(const uint8_t *bytes, size_t byte_len) {
         pos += n;
     }
 
+    session_end();
     xSemaphoreGive(s_busy_mutex);
 }
 

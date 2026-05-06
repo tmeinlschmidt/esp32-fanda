@@ -1,11 +1,10 @@
 // main.c — wires GPIO inputs to audio + LED feedback.
 // Polling task at 10 ms cadence (chosen over ISR: simpler, plenty fast for
-// human input). Tone plays first, THEN LED double-blinks — sequential, since
-// audio_play_* is blocking on this task. Total worst-case latency to next
-// poll on a button event is ~150 ms (tone) + ~400 ms (blink) ≈ 550 ms,
-// during which further button/reed edges are simply missed. That's fine for
-// the spec: drop-on-busy at the audio layer plus a blocked poller mean
-// events never stack.
+// human input). On a button press the input task spawns a background blinker
+// task and then synchronously plays the WAV (blocks ~3.2 s); the blinker
+// flashes the LED for the whole duration of playback and exits when stopped.
+// Further button/reed edges during those ~3.2 s are missed — drop-on-busy at
+// the audio layer plus a blocked poller mean events never stack.
 #include <stdbool.h>
 
 #include "driver/gpio.h"
@@ -28,14 +27,35 @@ static const char *TAG = "main";
 #define LED_ON  1
 #define LED_OFF 0
 
-// Blocks the input task for ~400 ms. Acceptable per the comment at top.
-static void led_double_blink(void) {
-    for (int i = 0; i < 2; ++i) {
+// Blinker task: toggles the LED at ~5 Hz while s_blinker_run is true. The
+// button handler starts it before WAV playback and stops it after, so the
+// LED flashes for the whole duration of the sound (~3.2 s).
+static volatile bool s_blinker_run    = false;
+static TaskHandle_t  s_blinker_handle = NULL;
+
+static void blinker_task(void *arg) {
+    (void)arg;
+    while (s_blinker_run) {
         gpio_set_level(PIN_LED, LED_ON);
         vTaskDelay(pdMS_TO_TICKS(BLINK_ON_MS));
         gpio_set_level(PIN_LED, LED_OFF);
         vTaskDelay(pdMS_TO_TICKS(BLINK_OFF_MS));
     }
+    gpio_set_level(PIN_LED, LED_OFF);
+    s_blinker_handle = NULL;
+    vTaskDelete(NULL);
+}
+
+static void start_blinking(void) {
+    if (s_blinker_handle) return;
+    s_blinker_run = true;
+    xTaskCreate(blinker_task, "blink", 2048, NULL, 4, &s_blinker_handle);
+}
+
+static void stop_blinking(void) {
+    s_blinker_run = false;
+    // Task observes the flag at its next vTaskDelay boundary (≤ ~200 ms),
+    // exits the loop, and leaves the LED in the OFF state.
 }
 
 static void input_task(void *arg) {
@@ -67,8 +87,9 @@ static void input_task(void *arg) {
             (now - last_button_edge) >= pdMS_TO_TICKS(DEBOUNCE_MS)) {
             last_button_edge = now;
             ESP_LOGI(TAG, "button pressed");
+            start_blinking();
             audio_play_button_tone();
-            led_double_blink();
+            stop_blinking();
         }
 
         // Reed: rising edge = magnet removed (closed->open). Detected and
