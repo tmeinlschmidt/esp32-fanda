@@ -1,0 +1,4 @@
+# Project defaults; overrides applied on first build, then merged into sdkconfig.
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
