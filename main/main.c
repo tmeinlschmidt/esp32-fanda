@@ -23,12 +23,17 @@ static const char *TAG = "main";
 #define BLINK_ON_MS      100
 #define BLINK_OFF_MS     100
 
+// LED is wired active LOW: anode to 3.3 V via resistor, cathode to GPIO.
+// Driving the pin LOW completes the circuit; HIGH turns the LED off.
+#define LED_ON  0
+#define LED_OFF 1
+
 // Blocks the input task for ~400 ms. Acceptable per the comment at top.
 static void led_double_blink(void) {
     for (int i = 0; i < 2; ++i) {
-        gpio_set_level(PIN_LED, 1);
+        gpio_set_level(PIN_LED, LED_ON);
         vTaskDelay(pdMS_TO_TICKS(BLINK_ON_MS));
-        gpio_set_level(PIN_LED, 0);
+        gpio_set_level(PIN_LED, LED_OFF);
         vTaskDelay(pdMS_TO_TICKS(BLINK_OFF_MS));
     }
 }
@@ -89,7 +94,7 @@ void app_main(void) {
         .intr_type    = GPIO_INTR_DISABLE,
     };
     ESP_ERROR_CHECK(gpio_config(&out_cfg));
-    gpio_set_level(PIN_LED, 0);
+    gpio_set_level(PIN_LED, LED_OFF);
 
     gpio_config_t in_cfg = {
         .pin_bit_mask = (1ULL << PIN_BUTTON) | (1ULL << PIN_REED),
