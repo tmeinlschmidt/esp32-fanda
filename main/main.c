@@ -23,10 +23,10 @@ static const char *TAG = "main";
 #define BLINK_ON_MS      100
 #define BLINK_OFF_MS     100
 
-// LED is wired active LOW: anode to 3.3 V via resistor, cathode to GPIO.
-// Driving the pin LOW completes the circuit; HIGH turns the LED off.
-#define LED_ON  0
-#define LED_OFF 1
+// LED is wired active HIGH: GPIO drives the anode (via current-limit resistor),
+// cathode to GND. Driving the pin HIGH lights the LED; LOW turns it off.
+#define LED_ON  1
+#define LED_OFF 0
 
 // Blocks the input task for ~400 ms. Acceptable per the comment at top.
 static void led_double_blink(void) {

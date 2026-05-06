@@ -4,7 +4,7 @@
 
 #include "driver/gpio.h"
 
-#define PIN_LED      GPIO_NUM_6   // D6  — LED, active LOW (anode to 3.3 V via resistor, cathode to GPIO)
+#define PIN_LED      GPIO_NUM_6   // D6  — LED, active HIGH (GPIO -> resistor -> LED anode, cathode to GND)
 #define PIN_BUTTON   GPIO_NUM_10  // D10 — push button to GND, internal pull-up
 #define PIN_REED     GPIO_NUM_1   // D1  — reed switch to GND, internal pull-up
 #define PIN_I2S_DIN  GPIO_NUM_7   // D7  — I2S data to MAX98357A
