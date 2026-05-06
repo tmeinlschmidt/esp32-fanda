@@ -112,6 +112,19 @@ void app_main(void) {
     ESP_LOGI(TAG, "initial levels: button=%d reed=%d (1 = idle/pulled-up, 0 = pulled to GND)",
              gpio_get_level(PIN_BUTTON), gpio_get_level(PIN_REED));
 
+    // Boot self-test: 3 quick LED blinks then a short tone. Lets us see whether
+    // GPIO6 is toggling and whether the I2S/amp path produces any sound,
+    // independent of the button/reed inputs. Remove later once everything works.
+    ESP_LOGI(TAG, "self-test: 3 LED blinks then tone");
+    for (int i = 0; i < 3; ++i) {
+        gpio_set_level(PIN_LED, LED_ON);
+        vTaskDelay(pdMS_TO_TICKS(120));
+        gpio_set_level(PIN_LED, LED_OFF);
+        vTaskDelay(pdMS_TO_TICKS(120));
+    }
+    audio_play_button_tone();
+    ESP_LOGI(TAG, "self-test done");
+
     // 4 KB stack is enough; sinf() and i2s_channel_write don't recurse deeply.
     xTaskCreate(input_task, "input", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "fanda up");

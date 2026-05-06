@@ -14,9 +14,9 @@ A small ESP-IDF application for an ESP32-C3 SuperMini that drives an LED, reads 
 | D6         | GPIO6   | LED anode (via 220-330 Ohm resistor to GND on cathode)              |
 | D10        | GPIO10  | Push button, other leg to GND (firmware enables internal pull-up)   |
 | D1         | GPIO1   | Reed switch, other leg to GND (firmware enables internal pull-up)   |
-| D9         | GPIO9   | I2S DIN  -> MAX98357A DIN                                           |
+| D7         | GPIO7   | I2S DIN  -> MAX98357A DIN                                           |
 | D8         | GPIO8   | I2S BCLK -> MAX98357A BCLK                                          |
-| D7         | GPIO7   | I2S LRC  -> MAX98357A LRC                                           |
+| D9         | GPIO9   | I2S LRC  -> MAX98357A LRC                                           |
 
 Power the MAX98357A from VIN (3.3 V or 5 V) and GND. The SD pin can be tied to VIN for always-on / both-channels-mixed behaviour. Leave the GAIN pin floating for the default 9 dB.
 
