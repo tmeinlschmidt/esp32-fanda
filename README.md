@@ -47,7 +47,7 @@ fanda/
 
 ## Prerequisites
 
-Install ESP-IDF v5.x. Pick the section for your OS.
+Install ESP-IDF v5.3 or newer (the project requires the `esp_driver_i2s` component, which was split out in v5.3). v6.x works too. Pick the section for your OS.
 
 ### macOS / Linux
 
